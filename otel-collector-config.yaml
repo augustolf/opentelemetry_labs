@@ -1,0 +1,100 @@
+# OpenTelemetry Collector Configuration
+# Receives telemetry from applications and exports to backends
+
+receivers:
+  # OTLP receiver - accepts traces, metrics, logs
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "*"
+
+processors:
+  # Batch processor - groups telemetry before export
+  batch:
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+    timeout: 5s
+
+  # Memory limiter - prevents OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # Resource processor - adds common attributes
+  resource:
+    attributes:
+      - key: collector.name
+        value: otel-collector-lab
+        action: upsert
+
+exporters:
+  # Console/Debug exporter - logs to stdout
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+  # OTLP exporter to Jaeger
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # ========================================
+  # DYNATRACE EXPORTER (uncomment when ready)
+  # ========================================
+  # otlphttp/dynatrace:
+  #   endpoint: https://{environment-id}.live.dynatrace.com/api/v2/otlp
+  #   headers:
+  #     Authorization: "Api-Token ${DYNATRACE_API_TOKEN}"
+  #   compression: gzip
+
+extensions:
+  # Health check endpoint
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+  # ZPages for debugging
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+  # Pprof for profiling
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+service:
+  extensions: [health_check, zpages, pprof]
+
+  pipelines:
+    # Traces pipeline
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [debug, otlp/jaeger]
+      # For Dynatrace: exporters: [debug, otlp/jaeger, otlphttp/dynatrace]
+
+    # Metrics pipeline
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [debug]
+      # For Dynatrace: exporters: [debug, otlphttp/dynatrace]
+
+    # Logs pipeline
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [debug]
+      # For Dynatrace: exporters: [debug, otlphttp/dynatrace]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: 0.0.0.0:8888
