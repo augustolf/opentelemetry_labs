@@ -1,16 +1,12 @@
 """
 Celery Application Configuration
 
-Configures Celery with RabbitMQ broker and OpenTelemetry instrumentation.
+Configures Celery with RabbitMQ broker.
+OpenTelemetry instrumentation is handled automatically by `opentelemetry-instrument`.
 """
 
 import os
 from celery import Celery
-
-# Import and initialize OpenTelemetry
-from app.tracing import init_telemetry
-
-init_telemetry()
 
 # Get broker URL from environment
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "amqp://guest:guest@localhost:5672//")

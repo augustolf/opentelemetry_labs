@@ -21,6 +21,9 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Auto-detect and install all applicable OpenTelemetry instrumentations
+RUN opentelemetry-bootstrap -a install
+
 # Copy application code
 COPY app/ ./app/
 

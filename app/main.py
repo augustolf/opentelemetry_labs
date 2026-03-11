@@ -1,7 +1,7 @@
 """
 Flask Application Entry Point
 
-Main Flask application with OpenTelemetry instrumentation.
+OpenTelemetry instrumentation is handled automatically by `opentelemetry-instrument`.
 """
 
 import logging
@@ -10,9 +10,7 @@ import os
 from flask import Flask, jsonify
 
 from app.api import api
-from app.tracing import init_telemetry, instrument_flask
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -36,9 +34,6 @@ def create_app() -> Flask:
         SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret-key"),
         JSON_SORT_KEYS=False,
     )
-
-    # Initialize OpenTelemetry (before registering routes)
-    init_telemetry(flask_app=app)
 
     # Register blueprints
     app.register_blueprint(api)

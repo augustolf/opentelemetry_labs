@@ -66,6 +66,7 @@ services:
       dockerfile: Dockerfile
     container_name: flask-api
     command: >
+      opentelemetry-instrument
       gunicorn --bind 0.0.0.0:8000
       --workers 2
       --threads 2
@@ -78,13 +79,14 @@ services:
       # Celery
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: rpc://
-      # OpenTelemetry
+      # OpenTelemetry (auto-instrumentation via opentelemetry-instrument)
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
       OTEL_SERVICE_NAME: flask-api
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development,service.version=1.0.0
       OTEL_PYTHON_LOG_CORRELATION: "true"
-      OTEL_PYTHON_LOG_LEVEL: info
+      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
       # App
       FLASK_ENV: development
       PYTHONUNBUFFERED: "1"
@@ -107,6 +109,7 @@ services:
       dockerfile: Dockerfile
     container_name: celery-worker
     command: >
+      opentelemetry-instrument
       celery -A app.celery_app worker
       --loglevel=info
       --concurrency=2
@@ -114,13 +117,14 @@ services:
       # Celery
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: rpc://
-      # OpenTelemetry
+      # OpenTelemetry (auto-instrumentation via opentelemetry-instrument)
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: delta
       OTEL_SERVICE_NAME: celery-worker
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development,service.version=1.0.0
       OTEL_PYTHON_LOG_CORRELATION: "true"
-      OTEL_PYTHON_LOG_LEVEL: info
+      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
       # App
       PYTHONUNBUFFERED: "1"
     depends_on:
