@@ -35,6 +35,8 @@ from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 
 logger = logging.getLogger(__name__)
 
+_initialized = False
+
 
 def get_resource() -> Resource:
     """Create OpenTelemetry resource with service information."""
@@ -172,27 +174,31 @@ def init_telemetry(flask_app=None) -> None:
     Args:
         flask_app: Optional Flask application instance to instrument
     """
-    # Configure logging first for better visibility
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s] - %(message)s',
-    )
+    global _initialized
 
-    # Setup exporters
-    setup_tracing()
-    setup_metrics()
-    setup_logging()
+    if not _initialized:
+        # Configure logging first for better visibility
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s] - %(message)s',
+        )
 
-    # Instrument libraries
-    instrument_celery()
-    instrument_requests()
-    instrument_logging()
+        # Setup exporters
+        setup_tracing()
+        setup_metrics()
+        setup_logging()
 
-    # Instrument Flask if provided
+        # Instrument libraries
+        instrument_celery()
+        instrument_requests()
+        instrument_logging()
+
+        _initialized = True
+        logger.info("OpenTelemetry initialization complete")
+
+    # Instrument Flask if provided (can be called after initial init)
     if flask_app:
         instrument_flask(flask_app)
-
-    logger.info("OpenTelemetry initialization complete")
 
 
 def get_tracer(name: str = __name__):
