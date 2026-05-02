@@ -138,6 +138,44 @@ services:
       - ./app:/app/app:ro
 
   # ===================
+  # Prometheus
+  # ===================
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    networks:
+      - otel-network
+
+  # ===================
+  # Grafana
+  # ===================
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - otel-network
+
+  # ===================
   # Celery Flower (Task Monitor)
   # ===================
   flower:
@@ -159,3 +197,6 @@ services:
 networks:
   otel-network:
     driver: bridge
+
+volumes:
+  grafana-data:

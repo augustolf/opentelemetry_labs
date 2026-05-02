@@ -15,15 +15,20 @@ Este projeto demonstra como instrumentar **automaticamente** uma aplicação Fla
        │            ┌─────────────┐             │
        └───────────▶│    OTel     │◀────────────┘
                     │  Collector  │
-                    │  :4318      │
+                    │  :4317/4318 │
                     └──────┬──────┘
                            │
-              ┌────────────┴────────────┐
-              ▼                         ▼
-       ┌─────────────┐          ┌─────────────┐
-       │   Jaeger    │          │  Dynatrace  │
-       │   :16686    │          │  (futuro)   │
-       └─────────────┘          └─────────────┘
+         ┌─────────────────┼──────────────────┐
+         ▼                 ▼                  ▼
+  ┌─────────────┐  ┌─────────────┐   ┌─────────────┐
+  │   Jaeger    │  │  Prometheus │   │  Dynatrace  │
+  │   :16686    │  │  :9090      │   │  (opcional) │
+  └─────────────┘  └──────┬──────┘   └─────────────┘
+                          │
+                   ┌──────▼──────┐
+                   │   Grafana   │
+                   │   :3000     │
+                   └─────────────┘
 ```
 
 ## ⚙️ Como funciona a auto-instrumentação
@@ -69,6 +74,8 @@ docker-compose up --build
 |---------|-----|-----------|
 | Flask API | http://localhost:8000 | API REST |
 | Jaeger UI | http://localhost:16686 | Visualização de traces |
+| Grafana | http://localhost:3000 | Dashboards de métricas |
+| Prometheus | http://localhost:9090 | Query de métricas |
 | RabbitMQ | http://localhost:15672 | Management UI (guest/guest) |
 | Flower | http://localhost:5555 | Monitor de tasks Celery |
 
@@ -110,6 +117,14 @@ curl http://localhost:8000/api/task/{task_id}/result?timeout=30
 3. Clique em "Find Traces"
 4. Clique em um trace para ver os detalhes
 
+### 5. Visualizar métricas no Grafana
+
+1. Abra http://localhost:3000
+2. Vá em **Connections → Data Sources → Add → Prometheus**
+3. URL: `http://prometheus:9090` → clique em **Save & Test**
+4. Vá em **Dashboards → New → Import**
+5. Use o ID `15983` para importar o dashboard oficial do OpenTelemetry Collector
+
 ## 📁 Estrutura do Projeto
 
 ```
@@ -118,6 +133,7 @@ opentelemetry_lab/
 ├── Dockerfile                   # Build + opentelemetry-bootstrap
 ├── requirements.txt             # Dependências (opentelemetry-distro + exporter)
 ├── otel-collector-config.yaml   # Configuração do OTel Collector
+├── prometheus.yml               # Configuração do Prometheus (scraping do Collector)
 ├── .env.example                 # Template de variáveis de ambiente
 ├── README.md                    # Este arquivo
 └── app/

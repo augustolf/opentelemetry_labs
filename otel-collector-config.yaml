@@ -40,6 +40,11 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
+  # Prometheus exporter - exposes metrics for Prometheus to scrape
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otel
+
   # OTLP exporter to Jaeger
   otlp/jaeger:
     endpoint: jaeger:4317
@@ -76,21 +81,20 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [debug, otlp/jaeger]
+      exporters: [debug, otlp/jaeger, otlphttp/dynatrace]
       # For Dynatrace: exporters: [debug, otlp/jaeger, otlphttp/dynatrace]
 
     # Metrics pipeline
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [debug]
-      # For Dynatrace: exporters: [debug, otlphttp/dynatrace]
+      exporters: [debug, prometheus, otlphttp/dynatrace]
 
     # Logs pipeline
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [debug]
+      exporters: [debug, otlphttp/dynatrace]
       # For Dynatrace: exporters: [debug, otlphttp/dynatrace]
 
   telemetry:
